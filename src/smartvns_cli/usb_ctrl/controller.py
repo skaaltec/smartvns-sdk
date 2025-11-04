@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 from smpclient import SMPClient
 from smpclient.transport.serial import SMPSerialTransport
+from serial.tools import list_ports
 
 from smartvns_cli.config import SysConfig, Stim
 from . import routines
@@ -77,6 +78,14 @@ async def factory_reset(ports: List[str]):
 async def dfu(ports: List[str], image: bytes):
     log.info(f"Operating on {len(ports)} devices (boot->dfu): {ports}")
 
+    detected_ports = {port.device for port in list_ports.comports()}
+
+    # check that they correspond to selected devices
+    ok = set([p.upper() for p in ports]) == set([p.upper() for p in detected_ports])
+    if not ok:
+        log.error("Mismatch between selected ports and detected ports, aborting DFU")
+        return
+
     devs = [SMPClient(transport=SMPSerialTransport(), address=port) for port in ports]
 
     await asyncio.gather(*[dev.connect() for dev in devs])
@@ -85,8 +94,10 @@ async def dfu(ports: List[str], image: bytes):
 
     time.sleep(5)
 
+    detected_ports = {port.device for port in list_ports.comports()}
+
     # Reconnect to bootloader and upload
-    devs = [SMPClient(transport=SMPSerialTransport(), address=port) for port in ports]
+    devs = [SMPClient(transport=SMPSerialTransport(), address=port) for port in detected_ports]
 
     await asyncio.gather(*[dev.connect() for dev in devs])
     await asyncio.gather(*(routines.routine_upload_image(dev, image) for dev in devs))
