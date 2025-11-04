@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "SmartVNS CLI tools"
 readme = "README.md"
 authors = [{name = "Andrea Ronco"}]
-dependencies = ["typer", "smpclient", "tqdm"]
+dependencies = ["typer", "smpclient", "tqdm", "protobuf"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
