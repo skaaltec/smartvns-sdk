@@ -8,7 +8,7 @@ import rich
 from serial.tools import list_ports
 from google.protobuf.json_format import MessageToJson, MessageToDict, Parse
 
-from smartvns_cli.config import SysConfig, Stim
+from smartvns_cli.config import SysConfig, StimConfig
 from . import controller
 
 app = typer.Typer()
@@ -90,7 +90,7 @@ def setconfig(cfg_type: ConfigType,
         if cfg_type == ConfigType.sys:
             value = SysConfig()
         else:
-            value = Stim().config
+            value = StimConfig()
         value = Parse(data, value)
 
 

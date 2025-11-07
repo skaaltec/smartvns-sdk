@@ -7,7 +7,7 @@ from smpclient import SMPClient
 from smpclient.transport.serial import SMPSerialTransport
 from serial.tools import list_ports
 
-from smartvns_cli.config import SysConfig, Stim
+from smartvns_cli.config import SysConfig, StimConfig
 from . import routines
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -124,14 +124,14 @@ async def get_version(ports: List[str]) -> List[Optional[str]]:
     return await asyncio.gather(*(routines.routine_get_version(dev) for dev in devs))
 
 
-async def get_config(port: str, cfg_type: str = "sys") -> Optional[Union[SysConfig, Stim.Config]]:
+async def get_config(port: str, cfg_type: str = "sys") -> Optional[Union[SysConfig, StimConfig]]:
     log.info(f"Operating on {port} (cfg_type={cfg_type})")
 
     async with SMPClient(transport=SMPSerialTransport(), address=port) as dev:
         return await routines.routine_get_config(dev, cfg_type)
 
 
-async def set_config(port: str, cfg_type: str, cfg: Union[SysConfig, Stim.Config]):
+async def set_config(port: str, cfg_type: str, cfg: Union[SysConfig, StimConfig]):
     """Set configuration value on given ports.
 
     cfg_type: 'sys' or 'stim'

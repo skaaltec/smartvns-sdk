@@ -9,7 +9,7 @@ from smpclient.requests.shell_management import Execute
 from smpclient.requests.zephyr_management import EraseStorage
 from smpclient.requests.os_management import DateTimeRead, DateTimeWrite, ResetWrite
 
-from smartvns_cli.config import SysConfig, Stim
+from smartvns_cli.config import SysConfig, StimConfig
 log = logging.getLogger("smp_routines")
 
 
@@ -137,7 +137,7 @@ async def routine_upload_image(dev: SMPClient, image: bytes):
             pass
 
 
-async def routine_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[Union[SysConfig, Stim.Config]]:
+async def routine_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[Union[SysConfig, StimConfig]]:
     # cfg_type is expected to be 'sys' or 'stim'
     response = await dev.request(Execute(
         argv=["cfg", "get", cfg_type]
@@ -156,13 +156,13 @@ async def routine_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[
     if cfg_type == "sys":
         cfg = SysConfig()
     else:
-        cfg = Stim().config
+        cfg = StimConfig()
 
     cfg.ParseFromString(data)
     return cfg
 
 
-async def routine_set_config(dev: SMPClient, cfg_type: str, value: Union[SysConfig, Stim.Config]) -> bool:
+async def routine_set_config(dev: SMPClient, cfg_type: str, value: Union[SysConfig, StimConfig]) -> bool:
     """Send a configuration set command to device.
 
     The VALUE is expected to be a string that the device understands for the
