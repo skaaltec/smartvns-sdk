@@ -1,4 +1,4 @@
 typer==0.19.2
 smpclient==5.1.1
 tqdm==4.67.1
-protobuf==5.29.5
+protobuf==6.31.0
