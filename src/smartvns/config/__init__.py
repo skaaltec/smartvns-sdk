@@ -7,7 +7,7 @@ try:
     # Prefer the in-repo generated package path
     from .proto.generated.python.smartvns_pb2 import  (
         SysConfig,
-        Stim,
+        StimConfig,
         IMUConf,
         MAGConf,
         AccFS,
@@ -23,7 +23,7 @@ except Exception:
 
 __all__ = [
     "SysConfig",
-    "Stim",
+    "StimConfig",
     "IMUConf",
     "MAGConf",
     "AccFS",

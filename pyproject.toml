@@ -3,15 +3,15 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smartvns-cli"
+name = "smartvns"
 version = "0.1.0"
 description = "SmartVNS CLI tools"
 readme = "README.md"
 authors = [{name = "Andrea Ronco"}]
-dependencies = ["typer", "smpclient", "tqdm"]
+dependencies = ["typer", "smpclient", "tqdm", "protobuf"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [project.scripts]
-smartvns-usb = "smartvns_cli.usb_ctrl.cli:app"
+smartvns-cli = "smartvns.cli._cli:app"

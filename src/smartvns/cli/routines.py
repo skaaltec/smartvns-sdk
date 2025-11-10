@@ -7,8 +7,8 @@ from smpclient import SMPClient
 from smpclient.transport.serial import SMPSerialTransport
 from serial.tools import list_ports
 
-from smartvns_cli.config import SysConfig, Stim
-from . import routines
+from smartvns.config import SysConfig, StimConfig
+from . import fragments
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger("smp_usb_controller")
@@ -20,8 +20,8 @@ async def pair(p1: str, p2: str):
         SMPClient(transport=SMPSerialTransport(), address=p2) as dev2:
 
         keys = await asyncio.gather(
-            routines.routine_get_oob_key(dev1),
-            routines.routine_get_oob_key(dev2)
+            fragments.fragment_get_oob_key(dev1),
+            fragments.fragment_get_oob_key(dev2)
         )
 
         if keys[0] is None or keys[1] is None:
@@ -29,8 +29,8 @@ async def pair(p1: str, p2: str):
             return
 
         await asyncio.gather(
-            routines.routine_set_oob_key(dev1, keys[1]),
-            routines.routine_set_oob_key(dev2, keys[0])
+            fragments.fragment_set_oob_key(dev1, keys[1]),
+            fragments.fragment_set_oob_key(dev2, keys[0])
         )
 
 
@@ -40,8 +40,8 @@ async def unpair(p1: str, p2: str):
         SMPClient(transport=SMPSerialTransport(), address=p2) as dev2:
 
         await asyncio.gather(
-            routines.routine_del_oob_key(dev1),
-            routines.routine_del_oob_key(dev2)
+            fragments.fragment_del_oob_key(dev1),
+            fragments.fragment_del_oob_key(dev2)
         )
 
 
@@ -51,7 +51,7 @@ async def set_time(ports: List[str]):
     for dev in devs:
         await dev.connect()
 
-    await asyncio.gather(*(routines.routine_set_time(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_set_time(dev) for dev in devs))
 
 
 async def reboot(ports: List[str]):
@@ -62,7 +62,7 @@ async def reboot(ports: List[str]):
     for dev in devs:
         await dev.connect()
 
-    await asyncio.gather(*(routines.routine_reboot(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_reboot(dev) for dev in devs))
 
 
 async def factory_reset(ports: List[str]):
@@ -72,7 +72,7 @@ async def factory_reset(ports: List[str]):
     for dev in devs:
         await dev.connect()
 
-    await asyncio.gather(*(routines.routine_factory_reset(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_factory_reset(dev) for dev in devs))
 
 
 async def dfu(ports: List[str], image: bytes):
@@ -89,8 +89,8 @@ async def dfu(ports: List[str], image: bytes):
     devs = [SMPClient(transport=SMPSerialTransport(), address=port) for port in ports]
 
     await asyncio.gather(*[dev.connect() for dev in devs])
-    await asyncio.gather(*(routines.routine_set_bootmode(dev) for dev in devs))
-    await asyncio.gather(*(routines.routine_reboot(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_set_bootmode(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_reboot(dev) for dev in devs))
 
     time.sleep(5)
 
@@ -100,8 +100,8 @@ async def dfu(ports: List[str], image: bytes):
     devs = [SMPClient(transport=SMPSerialTransport(), address=port) for port in detected_ports]
 
     await asyncio.gather(*[dev.connect() for dev in devs])
-    await asyncio.gather(*(routines.routine_upload_image(dev, image) for dev in devs))
-    await asyncio.gather(*(routines.routine_reboot(dev) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_upload_image(dev, image) for dev in devs))
+    await asyncio.gather(*(fragments.fragment_reboot(dev) for dev in devs))
 
 
 async def get_battery(ports: List[str]) -> List[Optional[int]]:
@@ -111,7 +111,7 @@ async def get_battery(ports: List[str]) -> List[Optional[int]]:
 
     await asyncio.gather(*[dev.connect() for dev in devs])
 
-    return await asyncio.gather(*(routines.routine_get_battery(dev) for dev in devs))
+    return await asyncio.gather(*(fragments.fragment_get_battery(dev) for dev in devs))
 
 
 async def get_version(ports: List[str]) -> List[Optional[str]]:
@@ -121,17 +121,17 @@ async def get_version(ports: List[str]) -> List[Optional[str]]:
 
     await asyncio.gather(*[dev.connect() for dev in devs])
 
-    return await asyncio.gather(*(routines.routine_get_version(dev) for dev in devs))
+    return await asyncio.gather(*(fragments.fragment_get_version(dev) for dev in devs))
 
 
-async def get_config(port: str, cfg_type: str = "sys") -> Optional[Union[SysConfig, Stim.Config]]:
+async def get_config(port: str, cfg_type: str = "sys") -> Optional[Union[SysConfig, StimConfig]]:
     log.info(f"Operating on {port} (cfg_type={cfg_type})")
 
     async with SMPClient(transport=SMPSerialTransport(), address=port) as dev:
-        return await routines.routine_get_config(dev, cfg_type)
+        return await fragments.fragment_get_config(dev, cfg_type)
 
 
-async def set_config(port: str, cfg_type: str, cfg: Union[SysConfig, Stim.Config]):
+async def set_config(port: str, cfg_type: str, cfg: Union[SysConfig, StimConfig]):
     """Set configuration value on given ports.
 
     cfg_type: 'sys' or 'stim'
@@ -140,4 +140,4 @@ async def set_config(port: str, cfg_type: str, cfg: Union[SysConfig, Stim.Config
     log.info(f"Setting config {cfg_type} on {port}")
 
     async with SMPClient(transport=SMPSerialTransport(), address=port) as dev:
-        await routines.routine_set_config(dev, cfg_type, cfg)
+        await fragments.fragment_set_config(dev, cfg_type, cfg)
