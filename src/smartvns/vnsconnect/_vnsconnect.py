@@ -115,7 +115,7 @@ from bleak import BleakClient, BleakScanner
 from bleak.backends.scanner import AdvertisementData
 
 # Protobuffer
-from smartvns_cli.config import SysConfig, StimConfig
+from smartvns.config import SysConfig, StimConfig
 
 import asyncio
 import threading
@@ -123,7 +123,7 @@ import concurrent.futures
 from typing import Union, Coroutine, Callable
 import logging
 
-from smartvns_cli.ble.vnsconnect_async import *
+from smartvns.vnsconnect.routines import *
 
 log = logging.getLogger(__name__)
 
@@ -166,7 +166,7 @@ class LoopRunner():
             raise TimeoutError()
 
 
-class VNSScanner(LoopRunner):
+class Scanner(LoopRunner):
     def __init__(self):
         super().__init__()
 
@@ -219,7 +219,7 @@ class VNSDevice(LoopRunner):
         )
 
 
-class VNSTracker(VNSDevice):
+class Tracker(VNSDevice):
     def __init__(self, device: Union[str, BLEDevice]):
         super().__init__(device)
 
@@ -257,7 +257,7 @@ class VNSTracker(VNSDevice):
             timeout=timeout
         )
 
-class VNSStimulator(VNSTracker):
+class Stimulator(Tracker):
     def __init__(self, device: Union[str, BLEDevice]):
         super().__init__(device)
 

@@ -1,3 +1,6 @@
 [submodule "src/smartvns_cli/config/proto"]
 	path = src/smartvns_cli/config/proto
 	url = git@github.com:skaaltec/fw-protobuffers.git
+[submodule "src/smartvns/config/proto"]
+	path = src/smartvns/config/proto
+	url = git@github.com:skaaltec/fw-protobuffers.git

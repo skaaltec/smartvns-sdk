@@ -3,7 +3,7 @@ from typing import Callable
 from bleak import BleakClient
 
 # Protobuffer
-from smartvns_cli.config import SysConfig, StimConfig
+from smartvns.config import SysConfig, StimConfig
 # private protosbuffers for stim ctrl
 from ..config.proto.generated.python.smartvns_pb2 import Stim, Empty
 

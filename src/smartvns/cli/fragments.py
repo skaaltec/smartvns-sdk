@@ -9,7 +9,7 @@ from smpclient.requests.shell_management import Execute
 from smpclient.requests.zephyr_management import EraseStorage
 from smpclient.requests.os_management import DateTimeRead, DateTimeWrite, ResetWrite
 
-from smartvns_cli.config import SysConfig, StimConfig
+from smartvns.config import SysConfig, StimConfig
 log = logging.getLogger("smp_routines")
 
 
@@ -17,7 +17,7 @@ def shell_ok(response: str) -> bool:
     return response.startswith("OK:")
 
 
-async def routine_set_time(dev: SMPClient) -> bool:
+async def fragment_set_time(dev: SMPClient) -> bool:
     response = await dev.request(DateTimeRead())
     if success(response):
         log.debug(f"Current datetime on device: {response.datetime}")
@@ -36,7 +36,7 @@ async def routine_set_time(dev: SMPClient) -> bool:
     return success(response)
 
 
-async def routine_get_oob_key(dev: SMPClient) -> Optional[str]:
+async def fragment_get_oob_key(dev: SMPClient) -> Optional[str]:
     response = await dev.request(Execute(
         argv=["bond", "get"]
     ))
@@ -51,7 +51,7 @@ async def routine_get_oob_key(dev: SMPClient) -> Optional[str]:
             return None
 
 
-async def routine_set_oob_key(dev: SMPClient, key: str) -> bool:
+async def fragment_set_oob_key(dev: SMPClient, key: str) -> bool:
     response = await dev.request(Execute(
         argv=["bond", "set", "vns", key]
     ))
@@ -68,7 +68,7 @@ async def routine_set_oob_key(dev: SMPClient, key: str) -> bool:
     return True
 
 
-async def routine_del_oob_key(dev: SMPClient) -> bool:
+async def fragment_del_oob_key(dev: SMPClient) -> bool:
     response = await dev.request(Execute(
         argv=["bond", "del", "vns"]
     ))
@@ -85,7 +85,7 @@ async def routine_del_oob_key(dev: SMPClient) -> bool:
     return True
 
 
-async def routine_reboot(dev: SMPClient) -> bool:
+async def fragment_reboot(dev: SMPClient) -> bool:
     response = await dev.request(ResetWrite())
     if error(response):
         log.error(f"Failed to reset device: {response}")
@@ -95,7 +95,7 @@ async def routine_reboot(dev: SMPClient) -> bool:
     return True
 
 
-async def routine_factory_reset(dev: SMPClient) -> bool:
+async def fragment_factory_reset(dev: SMPClient) -> bool:
     response = await dev.request(EraseStorage())
     if error(response):
         log.error(f"Failed to erase storage: {response}")
@@ -103,10 +103,10 @@ async def routine_factory_reset(dev: SMPClient) -> bool:
 
     log.debug("Storage erase command sent")
 
-    return await routine_reboot(dev)
+    return await fragment_reboot(dev)
 
 
-async def routine_set_bootmode(dev: SMPClient) -> bool:
+async def fragment_set_bootmode(dev: SMPClient) -> bool:
     response = await dev.request(Execute(
         argv=["dfu"]
     ))
@@ -120,7 +120,7 @@ async def routine_set_bootmode(dev: SMPClient) -> bool:
     return True
 
 
-async def routine_upload_image(dev: SMPClient, image: bytes):
+async def fragment_upload_image(dev: SMPClient, image: bytes):
     it = dev.upload(
         image=image,
         slot=0,
@@ -137,7 +137,7 @@ async def routine_upload_image(dev: SMPClient, image: bytes):
             pass
 
 
-async def routine_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[Union[SysConfig, StimConfig]]:
+async def fragment_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[Union[SysConfig, StimConfig]]:
     # cfg_type is expected to be 'sys' or 'stim'
     response = await dev.request(Execute(
         argv=["cfg", "get", cfg_type]
@@ -162,7 +162,7 @@ async def routine_get_config(dev: SMPClient, cfg_type: str = "sys") -> Optional[
     return cfg
 
 
-async def routine_set_config(dev: SMPClient, cfg_type: str, value: Union[SysConfig, StimConfig]) -> bool:
+async def fragment_set_config(dev: SMPClient, cfg_type: str, value: Union[SysConfig, StimConfig]) -> bool:
     """Send a configuration set command to device.
 
     The VALUE is expected to be a string that the device understands for the
@@ -189,7 +189,7 @@ async def routine_set_config(dev: SMPClient, cfg_type: str, value: Union[SysConf
         return False
 
 
-async def routine_get_battery(dev: SMPClient) -> Optional[int]:
+async def fragment_get_battery(dev: SMPClient) -> Optional[int]:
     response = await dev.request(Execute(
         argv=["batt"]
     ))
@@ -203,7 +203,7 @@ async def routine_get_battery(dev: SMPClient) -> Optional[int]:
         return int(output[4:])
 
 
-async def routine_get_version(dev: SMPClient) -> Optional[str]:
+async def fragment_get_version(dev: SMPClient) -> Optional[str]:
     response = await dev.request(Execute(
         argv=["version"]
     ))

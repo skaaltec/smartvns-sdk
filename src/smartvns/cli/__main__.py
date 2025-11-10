@@ -2,7 +2,7 @@
 
 This allows: python -m smartvns_cli.usb_ctrl --help
 """
-from .cli import app
+from ._cli import app
 
 def main():
     app()

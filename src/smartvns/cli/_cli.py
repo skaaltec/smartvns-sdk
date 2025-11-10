@@ -5,11 +5,11 @@ from enum import Enum
 
 import typer
 import rich
-from serial.tools import list_ports
+from serial.tools import list_ports as lports
 from google.protobuf.json_format import MessageToJson, MessageToDict, Parse
 
-from smartvns_cli.config import SysConfig, StimConfig
-from . import controller
+from smartvns.config import SysConfig, StimConfig
+from . import routines
 
 app = typer.Typer()
 
@@ -21,31 +21,31 @@ app.add_typer(get_app, name="get")
 app.add_typer(set_app, name="set")
 
 @app.command("list")
-def lports():
+def list_ports():
     """List available serial ports."""
-    ports = list_ports.comports()
+    ports = lports.comports()
     for port in ports:
         typer.echo(f"{port.device}: {port.description}")
 
 
 @set_app.command("time")
-def settime(ports: Annotated[List[str], typer.Argument()]):
+def set_datetime(ports: Annotated[List[str], typer.Argument()]):
     """Set current system time on devices provided in PORTS.
     """
-    asyncio.run(controller.set_time(ports))
+    asyncio.run(routines.set_time(ports))
 
 
 @get_app.command("battery")
-def getbatt(ports: Annotated[List[str], typer.Argument()]):
+def get_battery(ports: Annotated[List[str], typer.Argument()]):
     """Get battery level from device."""
-    b = asyncio.run(controller.get_battery(ports))
+    b = asyncio.run(routines.get_battery(ports))
     rich.print(b)
 
 
 @get_app.command("version")
-def getversion(ports: Annotated[List[str], typer.Argument()]):
+def get_fw_version(ports: Annotated[List[str], typer.Argument()]):
     """Get firmware version from device."""
-    v = asyncio.run(controller.get_version(ports))
+    v = asyncio.run(routines.get_version(ports))
     rich.print(v)
 
 
@@ -54,10 +54,10 @@ class ConfigType(str, Enum):
     stim = "stim"
 
 @get_app.command("config")
-def getconfig(cfg_type: ConfigType,
+def get_config(cfg_type: ConfigType,
               port: Annotated[str, typer.Argument()],
               save: Annotated[Union[Path, None], typer.Option(help="If provided, save configuration to this file.")] = None):
-    cfg = asyncio.run(controller.get_config(port, cfg_type.value))
+    cfg = asyncio.run(routines.get_config(port, cfg_type.value))
 
     if cfg is None:
         rich.print(f"[red]Failed to get {cfg_type} configuration from device at {port}[/red]")
@@ -73,7 +73,7 @@ def getconfig(cfg_type: ConfigType,
 
 
 @set_app.command("config")
-def setconfig(cfg_type: ConfigType,
+def set_config(cfg_type: ConfigType,
               port: Annotated[str, typer.Argument()],
               file: Annotated[Union[Path, None], typer.Option(help="If provided, save configuration to this file.")] = None):
 
@@ -94,19 +94,19 @@ def setconfig(cfg_type: ConfigType,
         value = Parse(data, value)
 
 
-    asyncio.run(controller.set_config(port, cfg_type.value, value))
+    asyncio.run(routines.set_config(port, cfg_type.value, value))
 
 
 @app.command()
 def reboot(ports: Annotated[List[str], typer.Argument()]):
     """Reset connected devices."""
-    asyncio.run(controller.reboot(ports))
+    asyncio.run(routines.reboot(ports))
 
 
 @app.command(name="factory-reset")
 def factory_reset(ports: Annotated[List[str], typer.Argument()]):
     """Erase storage and reset devices (full factory reset)."""
-    asyncio.run(controller.factory_reset(ports))
+    asyncio.run(routines.factory_reset(ports))
 
 
 @app.command()
@@ -117,16 +117,16 @@ def dfu(
     """Reboot to bootloader on devices and upload image from PATH."""
     image = open(path, "rb").read()
 
-    asyncio.run(controller.dfu(ports, image))
+    asyncio.run(routines.dfu(ports, image))
 
 
 @app.command()
 def pair(port1: str = typer.Argument(...), port2: str = typer.Argument(...)):
     """Exchange OOB keys to pair two connected devices."""
-    asyncio.run(controller.pair(port1, port2))
+    asyncio.run(routines.pair(port1, port2))
 
 
 @app.command()
 def unpair(port1: str = typer.Argument(...), port2: str = typer.Argument(...)):
     """Clear pairing information from two connected devices."""
-    asyncio.run(controller.unpair(port1, port2))
+    asyncio.run(routines.unpair(port1, port2))
