@@ -120,7 +120,7 @@ from smartvns_cli.config import SysConfig, StimConfig
 import asyncio
 import threading
 import concurrent.futures
-from typing import Union, Coroutine
+from typing import Union, Coroutine, Callable
 import logging
 
 from smartvns_cli.ble.vnsconnect_async import *
@@ -237,8 +237,25 @@ class VNSTracker(VNSDevice):
             timeout=timeout
         )
 
-    # todo: notifications
+    def start_notification(self,
+                           handler: Callable[[bytearray], None],
+                           timeout: float = 5.0) -> None:
 
+        # sender is known, no need to expose to user
+        def _handler(_, data):
+            handler(data)
+
+        return self.run(
+            start_notification_async(self._client, _handler),
+            timeout=timeout
+        )
+
+    def stop_notification(self,
+                          timeout: float = 5.0) -> None:
+        return self.run(
+            stop_notification_async(self._client),
+            timeout=timeout
+        )
 
 class VNSStimulator(VNSTracker):
     def __init__(self, device: Union[str, BLEDevice]):

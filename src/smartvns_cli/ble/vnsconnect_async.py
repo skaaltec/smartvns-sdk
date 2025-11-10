@@ -1,4 +1,5 @@
 # Bleak
+from typing import Callable
 from bleak import BleakClient
 
 # Protobuffer
@@ -109,3 +110,14 @@ async def decrease_stim_intensity_async(
     cmd = Stim(int_decrease=Empty())
     data = cmd.SerializeToString()
     await client.write_gatt_char(STIM_CHAR, data, response=True)
+
+
+async def start_notification_async(
+        client: BleakClient,
+        handler: Callable) -> None:
+    await client.start_notify(DATA_UUID, handler)
+
+
+async def stop_notification_async(
+        client: BleakClient) -> None:
+    await client.stop_notify(DATA_UUID)
