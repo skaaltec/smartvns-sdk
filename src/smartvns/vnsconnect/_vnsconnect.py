@@ -5,108 +5,30 @@ vnsconnect_c.py
 SmartVNS Python SDK (Tracker / Stimulator)
 ------------------------------------------
 
-This module provides a **modular and extensible Python SDK** for SmartVNS BLE devices,
-including both the *Tracker* and *Stimulator* units. It offers a high-level API
-for BLE communication, configuration handling via Protocol Buffers, and
-real-time data streaming through flexible callback-based notification handling.
+This SDK provides a modular Python API for SmartVNS BLE devices (*Tracker* and *Stimulator*), enabling BLE communication, Protobuf-based configuration, and real-time data streaming with callback-based notifications.
 
 Architecture
 ------------
-The SDK is built on top of the **Bleak** library for cross-platform BLE communication.
-It manages all asynchronous I/O internally through a dedicated background event loop
-running in its own thread, allowing users to interact synchronously from standard
-Python code without blocking BLE operations.
+- **Bleak-based BLE Communication**: Cross-platform BLE support with asynchronous I/O.
+- **Threaded Event Loop**: Background `asyncio` loop ensures non-blocking BLE operations.
+- **Encapsulation and Inheritance**: `VNSDevice` handles shared BLE logic, extended by `VNSTracker` (sensor streaming) and `VNSStimulator` (stimulation control).
+- **Flexible Callbacks**: Customizable notification handling via `start_notification(callback=...)`.
 
-Key Design Features
--------------------
-**Encapsulation and Inheritance:**
-    The `VNSDevice` base class encapsulates all shared BLE communication logic,
-    including connection handling, configuration read/write, and notification management.
-`VNSTracker` and `VNSStimulator` extend `VNSDevice` with device-specific logic:
-    `VNSTracker` for sensor streaming, and `VNSStimulator` for stimulation control.
-
-**Threaded Event Loop:**
-    Each device runs an internal `asyncio` event loop in a background thread.
-    This ensures non-blocking BLE communication even in synchronous scripts.
-
-**Flexible Notification Callbacks (NEW):**
-    Notification handling is now callback-based. The user can pass a custom callback
-    function to `start_notification(callback=...)` to process incoming BLE data
-    in any desired way (e.g., logging, visualization, or data buffering).
-
-If no callback is provided, the SDK defaults to printing decoded data via
-the internal `notification_callback()` method.
-
-    Example:
-        ```python
-        def custom_callback(name, sender, data):
-            print(f"[{name}] Received:", decode_data(data))
-
-        stim = VNSStimulator("SmartVNS Stimulator")
-        stim.start_notification(callback=custom_callback)
-        ```
-
-**Automatic Device Discovery and Connection:**
-    The `VNSScanner` class provides asynchronous BLE scanning and filters for
-    recognized SmartVNS devices ("SmartVNS Tracker", "SmartVNS Stimulator", "Zephyr").
-
-**Protocol Buffer Configuration Management:**
-    System and stimulation parameters are serialized using Protobuf messages
-    (`SysConfig` and `Stim`) for consistent communication with the embedded firmware.
-
-Class Hierarchy
----------------
-VNSScanner
-    Handles BLE scanning and discovery of SmartVNS devices.
-
-VNSDevice
-    Base class implementing connection management, configuration exchange,
-    background event loop handling, and notification subscription.
-
-VNSTracker(VNSDevice)
-    Adds IMU, MAG, and QUAT sensor configuration creation and streaming support.
-
-VNSStimulator(VNSTracker)
-    Extends tracker functionality with stimulation control logic (intensity,
-    pulse timing, deadband configuration, and runtime intensity stepping).
-
-Dependencies
+Key Features
 ------------
-**bleak**: Asynchronous BLE communication
+- **Device Discovery**: `VNSScanner` scans and filters SmartVNS devices.
+- **Protobuf Configuration**: System and stimulation parameters serialized via Protobuf.
+- **Custom Callbacks**: Users can define callbacks for BLE data processing.
 
-**protobuf**: Serialization of configuration messages
+Example:
+```python
+def custom_callback(name, sender, data):
+    print(f"[{name}] Received:", decode_data(data))
 
-**asyncio + threading**: Concurrent event-loop execution
 
-**google.protobuf.message**: Parsing of binary Protobuf payloads
 
-Change Log (v2.0 – Callback Update)
------------------------------------
-Introduced `callback` parameter in `start_notification()`:
-Users can now inject a custom callback to handle BLE data.
-The callback signature is:
-    ```python
-    def callback(device_name: str, sender: Any, data: bytearray) -> None:
-        ...
-    ```
-
-The internal event handler wraps this callback inside `_start_notification_async()`
-and falls back to the built-in `notification_callback()` if no callback is given.
-
-Improved class encapsulation:
-    `_user_callback` stored as instance variable
-    Shared BLE I/O methods remain encapsulated within `VNSDevice`
-    Derived classes only implement device-specific extensions
-
-Backwards compatible:
-    Existing code that relied on automatic printing still works without modification.
-
-Summary
--------
-This SDK now follows a more scalable, modular, and user-extensible architecture.
-Developers can connect to multiple devices simultaneously, assign independent
-callbacks to each, and manage both configuration and live data streams
-from synchronous Python applications without concurrency conflicts.
+stim = VNSStimulator("SmartVNS Stimulator")
+stim.start_notification(callback=custom_callback)
 """
 
 # Bleak
@@ -132,7 +54,7 @@ class LoopRunner():
     def __init__(self, timeout: float = 2):
         self.timeout = timeout
         self._loop = asyncio.new_event_loop()
-        self._thread  =threading.Thread(
+        self._thread = threading.Thread(
             target=self._runner,
             daemon=True
         )
@@ -167,6 +89,10 @@ class LoopRunner():
 
 
 class Scanner(LoopRunner):
+    """
+    Scanner class to discover SmartVNS devices via BLE.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -174,11 +100,17 @@ class Scanner(LoopRunner):
         self.scanner = BleakScanner()
 
     def start(self) -> None:
+        """
+        Start scanning for BLE devices.
+        """
         self.run(
             self.scanner.start(),
         )
 
     def stop(self):
+        """
+        Stop scanning for BLE devices and filter for SmartVNS devices.
+        """
         self.run(
             self.scanner.stop(),
         )
@@ -190,7 +122,7 @@ class Scanner(LoopRunner):
     @staticmethod
     def _filter_devices(devices: dict[str, tuple[BLEDevice, AdvertisementData]]) -> dict[str, tuple[BLEDevice, AdvertisementData]]:
         filtered: dict[str, tuple[BLEDevice, AdvertisementData]] = {k: v for k, v in devices.items()
-                    if v[0].name and "SmartVNS" in v[0].name}
+                                                                    if v[0].name and "SmartVNS" in v[0].name}
         return filtered
 
 
@@ -220,18 +152,54 @@ class VNSDevice(LoopRunner):
 
 
 class Tracker(VNSDevice):
+    """
+    Tracker class to handle SmartVNS Tracker specific operations.
+    """
+
     def __init__(self, device: Union[str, BLEDevice]):
         super().__init__(device)
 
     def get_sys_config(self, timeout: float = 5.0) -> SysConfig:
+        """
+        Retrieve the system configuration from the device.
+
+        Parameters
+        ----------
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        SysConfig
+            The system configuration retrieved from the device.
+
+
+        """
         return self.run(
             read_sys_config_async(self._client),
             timeout=timeout
         )
 
     def set_sys_config(self,
-                        cfg: SysConfig,
-                        timeout: float = 5.0) -> None:
+                       cfg: SysConfig,
+                       timeout: float = 5.0) -> None:
+        """
+        Set the system configuration on the device.
+
+        Parameters
+        ----------
+        cfg : SysConfig
+            The system configuration to set on the device.
+        timeout : float
+            Timeout for the operation in seconds.
+
+
+        Returns
+        -------
+        None
+            None
+
+        """
         return self.run(
             write_sys_config_async(self._client, cfg),
             timeout=timeout
@@ -240,6 +208,22 @@ class Tracker(VNSDevice):
     def start_notification(self,
                            handler: Callable[[bytearray], None],
                            timeout: float = 5.0) -> None:
+        """
+        Start notifications from the device with a custom handler.
+
+
+        Parameters
+        ----------
+        handler : Callable[[bytearray], None]
+            A callback function to handle incoming notification data.
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None       
+        """
 
         # sender is known, no need to expose to user
         def _handler(_, data):
@@ -252,16 +236,49 @@ class Tracker(VNSDevice):
 
     def stop_notification(self,
                           timeout: float = 5.0) -> None:
+        """
+        Stop notifications from the device.
+
+        Parameters
+        ----------
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None
+        """
+
         return self.run(
             stop_notification_async(self._client),
             timeout=timeout
         )
 
+
 class Stimulator(Tracker):
+
+    """
+    Stimulator class to handle SmartVNS Stimulator specific operations.
+    """
+
     def __init__(self, device: Union[str, BLEDevice]):
         super().__init__(device)
 
     def get_stim_config(self, timeout: float = 5.0) -> StimConfig:
+        """
+        Retrieve the stimulation configuration from the device.
+
+        Parameters
+        ----------
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        StimConfig
+            The stimulation configuration retrieved from the device.
+        """
         return self.run(
             read_stim_config_async(self._client),
             timeout=timeout
@@ -270,18 +287,61 @@ class Stimulator(Tracker):
     def set_stim_config(self,
                         cfg: StimConfig,
                         timeout: float = 5.0) -> None:
+        """
+        Set the stimulation configuration on the device.
+
+        Parameters
+        ----------
+        cfg : StimConfig
+            The stimulation configuration to set on the device.
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None
+
+        """
         return self.run(
             write_stim_config_async(self._client, cfg),
             timeout=timeout
         )
 
     def increase_intensity(self, timeout: float = 5.0) -> None:
+        """
+        Increase the stimulation intensity on the device.
+
+
+        Parameters
+        ----------
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None
+        """
         return self.run(
             increase_stim_intensity_async(self._client),
             timeout=timeout
         )
 
     def decrease_intensity(self, timeout: float = 5.0) -> None:
+        """
+        Decrease the stimulation intensity on the device.
+
+        Parameters
+        ----------
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None
+        """
         return self.run(
             decrease_stim_intensity_async(self._client),
             timeout=timeout
@@ -289,6 +349,21 @@ class Stimulator(Tracker):
 
     def trigger(self, duration_ms: int,
                 timeout: float = 5.0) -> None:
+        """
+        Trigger a stimulation pulse for a specified duration.
+
+        Parameters
+        ----------
+        duration_ms : int
+            Duration of the stimulation pulse in milliseconds.
+        timeout : float
+            Timeout for the operation in seconds.
+
+        Returns
+        -------
+        None
+            None
+        """
         cfg = self.get_stim_config()
         cfg.trigger_ms = duration_ms
         return self.set_stim_config(cfg, timeout=timeout)
