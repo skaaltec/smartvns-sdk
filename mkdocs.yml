@@ -1,0 +1,29 @@
+site_name: SmartVNS SDK
+site_dir: dist
+
+theme:
+  name: readthedocs
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            filters:
+              - "!^__"
+          options:
+            docstring_style: google
+            members_order: source
+            show_source: true
+            separate_signature: true
+            merge_init_into_class: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting Started: getting-started.md
+  - VNSConnect API:
+    - User API: vnsconnect.md
+    - Async API: vnsconnect-routines.md
+  - Command Line Interface:
+    - CLI API: cli.md
