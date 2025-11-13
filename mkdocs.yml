@@ -1,5 +1,4 @@
 site_name: SmartVNS SDK
-site_dir: dist
 
 theme:
   name: readthedocs
@@ -8,9 +7,6 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          selection:
-            filters:
-              - "!^__"
           options:
             docstring_style: google
             members_order: source
