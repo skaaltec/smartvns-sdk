@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import concurrent.futures
-from typing import Union, Coroutine, Callable
+from typing import Any, Union, Coroutine, Callable
 
 from bleak.backends.device import BLEDevice
 from bleak import BleakClient, BleakScanner
@@ -70,7 +70,7 @@ class LoopRunner():
         self._loop.call_soon_threadsafe(self._loop.stop)
         self._thread.join(timeout=self.timeout)
 
-    def run(self, coro: Coroutine, timeout: float = 5):
+    def run(self, coro: Coroutine, timeout: float = 5) -> Any:
         """Schedule a coroutine to run on the background event loop and wait.
 
         Args:

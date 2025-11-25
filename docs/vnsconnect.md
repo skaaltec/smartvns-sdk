@@ -2,7 +2,7 @@
 
 ::: src.smartvns.vnsconnect
     options:
-      inherited_members: false
+      inherited_members: true
       members:
         - Scanner
         - Tracker
