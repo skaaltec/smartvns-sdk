@@ -2,4 +2,4 @@
 
 from . import cli, config, vnsconnect
 
-__all__ = ["cli", "vnsconnect", "config"]
+__all__ = ["cli", "vnsconnect", "config", "scripts"]
