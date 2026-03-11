@@ -5,24 +5,38 @@ Some example usecases of the VNSConnect SDK used with the SmartVNS research devi
 ## Finding a device nearby
 ```python
 # Example 1: scan and print SmartVNS devices
-import time
-from smartvns.vnsconnect import Scanner
 
-scanner = Scanner()
-scanner.start()
-time.sleep(5)
-scanner.stop()
+from smartvns import vnsconnect
+import asyncio
 
-for address, (dev, adv) in scanner.devices.items():
-  print(f"{address}: {dev.name} rssi: {adv.rssi} dBm")
 
-scanner.terminate()
+async def runner():
+    scanner = vnsconnect.Scanner()
+    scanner.start()
+    await asyncio.sleep(5)  # Scan for 5 seconds
+    scanner.stop()
+    print("Scan complete. Found devices:")
+    print(scanner.devices)
+    if not scanner.devices:
+        print("No VNS devices found. Exiting.")
+        return
+    else:
+        for addr, (dev, adv) in scanner.devices.items():
+            print(
+                f"- {adv.local_name or dev.name} ({addr}) with RSSI {adv.rssi} dB")
+
+    scanner.terminate()
+
+if __name__ == "__main__":
+    asyncio.run(runner())
+
 ```
 
 ## Controlling a SmartVNS Stimulator
 ```python
 # Example 2: Connect and configure a stimulator,
 # then increase intensity and trigger stimulation
+#IMPORTANT: you need to be in an async loop 
 import time
 from smartvns.vnsconnect import Stimulator
 from smartvns.config import StimConfig
@@ -59,6 +73,7 @@ due to poor signal quality. This must be accounted for in real-time use.
 
 ```python
 # Example 3: Connect and stream data from a SmartVNS Tracker
+#IMPORTANT: you need to be in an async loop 
 import time
 from smartvns.vnsconnect import Tracker
 
@@ -85,6 +100,7 @@ In most of the cases, it is useful to work with decoded data instead.
 
 ```python
 # Example 4: Decode data in real-time
+#IMPORTANT: you need to be in an async loop 
 import time
 from smartvns.vnsconnect import Tracker
 
@@ -125,6 +141,7 @@ implemented in the handler.
 
 ```python
 #Example 5: define a custom data pipeline
+#IMPORTANT: you need to be in an async loop 
 import time
 from smartvns.vnsconnect import Tracker
 
