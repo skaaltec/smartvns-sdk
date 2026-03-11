@@ -10,7 +10,7 @@ from smartvns import vnsconnect
 import asyncio
 
 
-async def runner():
+async def scanner():
     scanner = vnsconnect.Scanner()
     scanner.start()
     await asyncio.sleep(5)  # Scan for 5 seconds
@@ -28,7 +28,7 @@ async def runner():
     scanner.terminate()
 
 if __name__ == "__main__":
-    asyncio.run(runner())
+    asyncio.run(scanner())
 
 ```
 
@@ -36,32 +36,53 @@ if __name__ == "__main__":
 ```python
 # Example 2: Connect and configure a stimulator,
 # then increase intensity and trigger stimulation
+# At the end, it disconnect from the devices
 #IMPORTANT: you need to be in an async loop 
+
+
 import time
 from smartvns.vnsconnect import Stimulator
 from smartvns.config import StimConfig
+"""
+Options to connect to SmartVNS devices:
 
-stim = Stimulator("AA:BB:CC:DD:EE:FF")
-stim.connect()
+Options:
+1. Connect via knon device alias 
+  stim = Stimulator("AA:BB:CC:DD:EE:FF")
+2. Run Scanner function 
+    scanner = vnsconnect.Scanner()
+    scanner.start()
+    await asyncio.sleep(5)  # Scan for 5 seconds
+    scanner.stop()
 
-cfg = StimConfig(**{
-    "retain_cfg": False,
-    "trigger_ms": 1000,
-    "forward_us": 250,
-    "deadband_us": 100,
-    "period_us": 40000,
-    "intensity_uA": 100,
-})
 
-stim.set_stim_config(cfg)
+"""
+async def connect():
 
-for _ in range(3):
-  stim.increase_intensity()
-  stim.trigger(duration_ms=1000)
-  time.sleep(2)
+  stim = Stimulator("AA:BB:CC:DD:EE:FF")
+  stim.connect()
 
-stim.disconnect()
-stim.terminate()
+  cfg = StimConfig(**{
+      "retain_cfg": False,
+      "trigger_ms": 1000,
+      "forward_us": 250,
+      "deadband_us": 100,
+      "period_us": 40000,
+      "intensity_uA": 100,
+  })
+
+  stim.set_stim_config(cfg)
+
+  for _ in range(3):
+    stim.increase_intensity()
+    stim.trigger(duration_ms=1000)
+    time.sleep(2)
+
+  stim.disconnect()
+  stim.terminate()
+
+if __name__ == "__main__":
+    asyncio.run(connect())
 ```
 
 
@@ -73,7 +94,7 @@ due to poor signal quality. This must be accounted for in real-time use.
 
 ```python
 # Example 3: Connect and stream data from a SmartVNS Tracker
-#IMPORTANT: you need to be in an async loop 
+#IMPORTANT: you need to be in an async loop (as in connect and scanner) 
 import time
 from smartvns.vnsconnect import Tracker
 
@@ -100,7 +121,7 @@ In most of the cases, it is useful to work with decoded data instead.
 
 ```python
 # Example 4: Decode data in real-time
-#IMPORTANT: you need to be in an async loop 
+#IMPORTANT: you need to be in an async loop (as in connect and scanner) 
 import time
 from smartvns.vnsconnect import Tracker
 
@@ -141,7 +162,7 @@ implemented in the handler.
 
 ```python
 #Example 5: define a custom data pipeline
-#IMPORTANT: you need to be in an async loop 
+#IMPORTANT: you need to be in an async loop (as in connect and scanner) 
 import time
 from smartvns.vnsconnect import Tracker
 
