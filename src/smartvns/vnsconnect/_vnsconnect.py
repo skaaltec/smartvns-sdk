@@ -168,7 +168,7 @@ class Scanner(LoopRunner):
         """
 
         filtered: dict[str, tuple[BLEDevice, AdvertisementData]] = {k: v for k, v in devices.items()
-                                    if v[0].name and "SmartVNS" in v[0].name}
+                                                                    if v[0].name and "SmartVNS" in v[0].name}
         return filtered
 
 
@@ -367,6 +367,13 @@ class Stimulator(Tracker):
 
         Args:
             cfg (StimConfig): The stimulation configuration to set on the device.
+                StimConfig:
+                    trigger_ms (int): The duration of the stimulation in milliseconds.
+                    forward_us (int): The duration of the forward phase of the stimulation pulse in microseconds.
+                    deadband_us (int): The duration of the deadband phase of the stimulation pulse in microseconds (the period after the forward phase during which no stimulation occurs).
+                    period_us (int): The total period of the stimulation pulse in microseconds (the time from the start of one pulse to the start of the next pulse).
+                    intensity_uA (int): The intensity of the stimulation in microamperes.
+                    retain_cfg (bool): Whether to retain the current configuration on the device after a power cycle (True) or not (False) (default: False).
             timeout (float): Timeout for the operation in seconds.
 
         Returns:
