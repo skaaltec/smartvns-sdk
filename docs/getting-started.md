@@ -32,17 +32,16 @@ if __name__ == "__main__":
 
 ```
 
-## Controlling a SmartVNS Stimulator
+## Controlling a SmartVNS Stimulator with Configuration
 ```python
 # Example 2: Connect and configure a stimulator,
 # then increase intensity and trigger stimulation
 # At the end, it disconnect from the devices
 #IMPORTANT: you need to be in an async loop 
 
-
-import time
 from smartvns.vnsconnect import Stimulator
 from smartvns.config import StimConfig
+import asyncio
 """
 Options to connect to SmartVNS devices:
 
@@ -76,13 +75,86 @@ async def connect():
   for _ in range(3):
     stim.increase_intensity()
     stim.trigger(duration_ms=1000)
-    time.sleep(2)
+    await asyncio.sleep(2)
 
   stim.disconnect()
   stim.terminate()
 
 if __name__ == "__main__":
     asyncio.run(connect())
+```
+## Controlling a SmartVNS Stimulator with Configuration
+This example shows, that a SmartVNS Stimulator is controllable via the Stimulator itself and the SDK commands as well.
+Intensity can be controlled with the device, while this configuration is then used to trigger stimulations directly via the script.
+```python
+#Example 3: 
+
+# Trigger Stimulation via 'Enter Command' in Terminal
+# Press 'q' to quit.
+
+# This is just a test script to verify that stimulation can be triggerd via USB and also via Stimulator directly.
+
+# The code works that way, to configure the right intensity directly via the stimulator and then trigger the stimulation via the terminal command. This way we can test both the configuration and the triggering separately.
+
+
+from smartvns.vnsconnect import Stimulator
+from smartvns.config import StimConfig
+import asyncio
+import sys
+
+"""
+Options to connect to SmartVNS devices:
+
+Options:
+1. Connect via knon device alias 
+  stim = Stimulator("AA:BB:CC:DD:EE:FF")
+2. Run Scanner function 
+    scanner = vnsconnect.Scanner()
+    scanner.start()
+    await asyncio.sleep(5)  # Scan for 5 seconds
+    scanner.stop()
+
+
+"""
+
+async def connect():
+
+    stim = Stimulator("AA:BB:CC:DD:EE:FF")
+    stim.connect()
+    print("Connected to stimulator.")
+
+    current_config = stim.get_stim_config()
+    print("\nCurrent stimulation configuration:")
+    print(f"   Intensity: {current_config.intensity_uA} µA")
+
+    try:
+        while True:
+
+            key = input()
+
+            if key == "":  # Spacebar pressed
+                print("Stimulation triggered!")
+                stim.trigger(duration_ms=1000)
+                print(
+                    f"   Current intensity: {stim.get_stim_config().intensity_uA} µA")
+
+            elif key.lower() == "q":  # Quit
+                print("\nExiting...")
+                break
+            else:
+                print(
+                    f"Unknown input: '{key}' (press SPACE to trigger or 'q' to quit)")
+
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user.")
+    finally:
+        print("Disconnecting...")
+        stim.disconnect()
+        print("Done.")
+
+if __name__ == "__main__":
+    asyncio.run(connect())
+
 ```
 
 
@@ -95,8 +167,8 @@ due to poor signal quality. This must be accounted for in real-time use.
 ```python
 # Example 3: Connect and stream data from a SmartVNS Tracker
 #IMPORTANT: you need to be in an async loop (as in connect and scanner) 
-import time
 from smartvns.vnsconnect import Tracker
+import asyncio
 
 tracker = Tracker("AA:BB:CC:DD:EE:FF") # or BLEDevice from previous scan
 tracker.connect()
@@ -109,7 +181,7 @@ with open("rec.bin", "wb") as f:
 
   tracker.start_notification(handler)
 
-  time.sleep(10)
+  await asyncio.sleep(10)
 
   tracker.stop_notification()
 
@@ -122,7 +194,7 @@ In most of the cases, it is useful to work with decoded data instead.
 ```python
 # Example 4: Decode data in real-time
 #IMPORTANT: you need to be in an async loop (as in connect and scanner) 
-import time
+import asyncio
 from smartvns.vnsconnect import Tracker
 
 tracker = Tracker("AA:BB:CC:DD:EE:FF") # or BLEDevice from previous scan
@@ -139,7 +211,7 @@ def callback(data: bytearray):
 
 tracker.start_notification(callback)
 
-time.sleep(10)
+await asyncio.sleep(10)
 
 tracker.stop_notification()
 
@@ -163,7 +235,7 @@ implemented in the handler.
 ```python
 #Example 5: define a custom data pipeline
 #IMPORTANT: you need to be in an async loop (as in connect and scanner) 
-import time
+import asyncio
 from smartvns.vnsconnect import Tracker
 
 tracker = Tracker("AA:BB:CC:DD:EE:FF") # or BLEDevice from previous scan
@@ -191,11 +263,11 @@ with open("imu.log", "w") as f_imu, open("mag.log", "w") as f_mag:
 
     tracker.start_notification(callback)
 
-    time.sleep(10)
+    await asyncio.sleep(10)
 
     tracker.stop_notification()
 
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     tracker.disconnect()
     tracker.terminate()
