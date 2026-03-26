@@ -83,7 +83,7 @@ async def connect():
 if __name__ == "__main__":
     asyncio.run(connect())
 ```
-## Controlling a SmartVNS Stimulator with Configuration
+## Controlling a SmartVNS Stimulator with Configuration and Stimulator
 This example shows, that a SmartVNS Stimulator is controllable via the Stimulator itself and the SDK commands as well.
 Intensity can be controlled with the device, while this configuration is then used to trigger stimulations directly via the script.
 ```python
