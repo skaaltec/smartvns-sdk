@@ -78,7 +78,8 @@ async def factory_reset(ports: List[str]):
 async def dfu(ports: List[str], image: bytes):
     log.info(f"Operating on {len(ports)} devices (boot->dfu): {ports}")
 
-    detected_ports = {port.device for port in list_ports.comports()}
+    detected_ports = {port.device for port in list_ports.comports()
+                       if port.description and "SmartVNS" in port.description}
 
     # check that they correspond to selected devices
     ok = set([p.upper() for p in ports]) == set([p.upper() for p in detected_ports])
