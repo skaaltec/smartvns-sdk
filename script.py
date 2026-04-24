@@ -4,7 +4,15 @@ from serial.tools import list_ports
 from smartvns.cli.routines import dfu, get_version
 
 # FIRMWARE_PATH = Path("/Users/reda/workspace/work/vnssdk/stim-zephyr.signed.bin")
-FIRMWARE_PATH = Path("/Users/reda/workspace/work/vnssdk/custom fw no pairing/original pairing/stimulator fw 1.0.6/zephyr.signed.bin")
+# FIRMWARE_PATH = Path("/Users/reda/workspace/work/vnssdk/custom fw no pairing/original pairing/stimulator fw 1.0.6/zephyr.signed.bin")
+# stim
+FIRMWARE_PATH = Path("/Users/reda/workspace/work/west/ws_smartVNS/smartVNS/app/build_stim/app/zephyr/zephyr.signed.bin")
+# tracker
+# FIRMWARE_PATH = Path("/Users/reda/workspace/work/west/ws_smartVNS/smartVNS/app/build/app/zephyr/zephyr.signed.bin")
+# storage erase all tracker
+# FIRMWARE_PATH = Path("/Users/reda/workspace/work/vnssdk/storage_erase_all/tracker/zephyr.signed.bin")
+# storage erase all stimulator
+# FIRMWARE_PATH = Path("/Users/reda/workspace/work/vnssdk/storage_erase_all/stimulator/zephyr.signed.bin")
 
 
 def detect_ports():
