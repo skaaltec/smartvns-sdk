@@ -1,5 +1,7 @@
 env/
+.venv/
 __pycache__/
 *egg-info/
 .vscode/
 *.code-workspace
+log.txt
