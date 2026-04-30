@@ -67,6 +67,20 @@ class VNSSample(Sample):
     current: Union[int, float]  # in milliAmps
     src_voltage: Union[int, float] # in Volts
     src_current: Union[int, float] # in milliAmps
+    impedance: int = 0  # derived: (src_voltage - voltage)/current * 10 - 4.8
+
+
+@dataclass
+class UnknownPacket:
+    """A chunk of bytes the decoder could not interpret.
+
+    Emitted when the decoder encounters a sample-type byte it doesn't
+    recognize, or one whose payload size is not yet implemented (e.g.
+    DATE_TIME). ``payload`` contains the unrecognized bytes from the
+    type byte to the end of the buffer, hex-encoded.
+    """
+    type_byte: int
+    payload: str
 
 class Decoder():
     """Decode raw binary sample streams into Sample dataclass instances.
@@ -103,39 +117,48 @@ class Decoder():
     par_vns = struct.Struct('<I4h')
     par_imuquat = struct.Struct('<I6h4h')
 
-    def __call__(self, data: bytearray) -> List[Sample]:
-        d = []
+    def __call__(self, data: bytearray) -> List[Union[Sample, UnknownPacket]]:
+        d: List[Union[Sample, UnknownPacket]] = []
         try:
             while len(data) > 0:
                 sample_type = data[0]
-                data = data[1:]
 
                 if sample_type == SampleType.IMU.value:
                     ssize = self.par_imu.size
-                    s = self.par_imu.unpack(data[:ssize])
-                    sample = IMUSample(*s)
+                    s = self.par_imu.unpack(data[1:1 + ssize])
+                    d.append(IMUSample(*s))
+                    data = data[1 + ssize:]
                 elif sample_type == SampleType.QUAT.value:
                     ssize = self.par_quat.size
-                    s = self.par_quat.unpack(data[:ssize])
-                    sample = QuatSample(*s)
+                    s = self.par_quat.unpack(data[1:1 + ssize])
+                    d.append(QuatSample(*s))
+                    data = data[1 + ssize:]
                 elif sample_type == SampleType.MAG.value:
                     ssize = self.par_mag.size
-                    s = self.par_mag.unpack(data[:ssize])
-                    sample = MagSample(*s)
+                    s = self.par_mag.unpack(data[1:1 + ssize])
+                    d.append(MagSample(*s))
+                    data = data[1 + ssize:]
                 elif sample_type == SampleType.VNS_DATA.value:
                     ssize = self.par_vns.size
-                    s = self.par_vns.unpack(data[:ssize])
-                    sample = VNSSample(*s)
+                    s = self.par_vns.unpack(data[1:1 + ssize])
+                    impedance = int((s[3] - s[1]) / s[2] * 10 - 4.8) if s[2] else 0
+                    d.append(VNSSample(*s, impedance=impedance))
+                    data = data[1 + ssize:]
                 elif sample_type == SampleType.IMU_QUAT.value:
                     ssize = self.par_imuquat.size
-                    s = self.par_imuquat.unpack(data[:ssize])
-                    sample = IMUQuatSample(*s)
-                elif sample_type == SampleType.DATE_TIME.value:
-                    # todo: handle DATE_TIME
-                    pass
-
-                d.append(sample)
-                data = data[ssize:]
+                    s = self.par_imuquat.unpack(data[1:1 + ssize])
+                    d.append(IMUQuatSample(*s))
+                    data = data[1 + ssize:]
+                else:
+                    # Unrecognized type byte (includes DATE_TIME, whose
+                    # payload size is not yet implemented). We can't safely
+                    # re-sync without knowing the payload size, so capture
+                    # the remainder for inspection and stop.
+                    d.append(UnknownPacket(
+                        type_byte=sample_type,
+                        payload=bytes(data).hex(),
+                    ))
+                    break
         except struct.error as e:
             print(f"Error unpacking data: {e}")
             print(f"Remaining data length: {len(data)}")
@@ -264,7 +287,8 @@ class UnitScaler():
             current = sample.current / 1000.0
             src_voltage = sample.src_voltage / 100.0
             src_current = sample.src_current / 1000.0
-            return VNSSample(sample.timestamp, voltage, current, src_voltage, src_current)
+            return VNSSample(sample.timestamp, voltage, current, src_voltage, src_current,
+                             impedance=sample.impedance)
         else:
             raise ValueError("Unknown sample type")
 

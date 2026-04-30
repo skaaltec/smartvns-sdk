@@ -117,7 +117,11 @@ class Scanner(LoopRunner):
         super().__init__()
 
         self.devices = dict()
-        self.scanner = BleakScanner()
+
+        async def _make_scanner():
+            return BleakScanner()
+
+        self.scanner = self.run(_make_scanner())
 
     def start(self) -> None:
         """
@@ -199,7 +203,11 @@ class VNSDevice(LoopRunner):
         super().__init__()
 
         self.device = device
-        self._client = BleakClient(device)
+
+        async def _make_client():
+            return BleakClient(device)
+
+        self._client = self.run(_make_client())
 
     def connect(self,
                 retries: int = 3,
